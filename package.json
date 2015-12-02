@@ -1,0 +1,12 @@
+{
+  "name": "X3DJSONLD",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "express": "*",
+    "socket.io": "*"
+  },
+  "scripts": {
+    "start": "node app.js"
+  }
+}
