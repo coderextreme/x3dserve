@@ -69,7 +69,7 @@ ecmascript:
                     </Appearance>
                 </Shape>
                 <Script DEF="MoveCylinder">
-                    <field name="spine" accessType="outputOnly" type="MFVec3f"/>
+                    <field name="spine" accessType="outputOnly" type="MFVec3f" value="0 -1 0, 0 1 0"/>
                     <field name="set_endA" accessType="inputOnly" type="SFVec3f"/>
                     <field name="set_endB" accessType="inputOnly" type="SFVec3f"/>
                     <IS>
@@ -78,24 +78,18 @@ ecmascript:
                     </IS>
 <![CDATA[
 ecmascript:
-                function initialize() {
-                    endA = new SFVec3f(0,0,0);
-                    endB = new SFVec3f(1,1,1);
-		    spine = new MFVec3f(endA, endB);
-                }
+
                 function set_endA(value) {
-                    endA = value;                        
-		    spine = new MFVec3f(endA, endB);
+		    spine = new MFVec3f(value, spine[1]);
                 }
                 
                 function set_endB(value) {
-		    endB = value;                      
-		    spine = new MFVec3f(endA, endB);
+		    spine = new MFVec3f(spine[0], value);
                 }
 ]]>
                 </Script>
                 
-                <ROUTE fromNode='MoveCylinder' fromField='spine' toNode='extrusion' toField='spine'/>
+                <ROUTE fromNode='MoveCylinder' fromField='spine' toNode='extrusion' toField='set_spine'/>
                 
             </ProtoBody>
         </ProtoDeclare>
