@@ -25,7 +25,7 @@
                     <Transform translation="1 0 0">            
                     <Shape>
                         <Text string='"Node"'>
-                            <FontStyle size="5"/>
+                            <FontStyle family='"SERIF"' justify='"MIDDLE" "MIDDLE"' size="5"/>
                         </Text>
                         <Appearance>
                             <Material diffuseColor="0 0 1"/>
