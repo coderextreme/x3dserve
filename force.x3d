@@ -103,6 +103,9 @@ ecmascript:
         <ProtoInstance DEF="nodeC" name="node">
             <fieldValue name="position" value="-1.0 -1.0 -1.0"/>
         </ProtoInstance>
+        <ProtoInstance DEF="nodeD" name="node">
+            <fieldValue name="position" value="1.0 1.0 -1.0"/>
+        </ProtoInstance>
         <ProtoInstance DEF="linkA" name="cylinder">
             <fieldValue name="positionA" value="0 0 0"/>
             <fieldValue name="positionB" value="1 1 1"/>
@@ -111,10 +114,16 @@ ecmascript:
             <fieldValue name="positionA" value="0 0 0"/>
             <fieldValue name="positionB" value="-1 -1 -1"/>
         </ProtoInstance>
+        <ProtoInstance DEF="linkC" name="cylinder">
+            <fieldValue name="positionA" value="1 1 1"/>
+            <fieldValue name="positionB" value="1 1 -1"/>
+        </ProtoInstance>
         </Transform>
         <ROUTE fromNode="nodeA" fromField="position" toNode="linkA" toField="positionA"/>
         <ROUTE fromNode="nodeB" fromField="position" toNode="linkA" toField="positionB"/>
         <ROUTE fromNode="nodeA" fromField="position" toNode="linkB" toField="positionA"/>
         <ROUTE fromNode="nodeC" fromField="position" toNode="linkB" toField="positionB"/>
+        <ROUTE fromNode="nodeA" fromField="position" toNode="linkC" toField="positionA"/>
+        <ROUTE fromNode="nodeD" fromField="position" toNode="linkC" toField="positionB"/>
     </Scene>
 </X3D>
