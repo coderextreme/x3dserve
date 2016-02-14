@@ -1,5 +1,5 @@
 {
-  "name": "X3DJSONLD",
+  "name": "x3dserve",
   "version": "0.0.1",
   "private": true,
   "dependencies": {
@@ -11,5 +11,8 @@
   "scripts": {
     "start": "node app.js",
     "postinstall": "javac -cp saxon9B.jar RunSaxon.java"
+  },
+  "engines" : {
+    "java" : "8"
   }
 }
