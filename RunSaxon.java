@@ -1,9 +1,8 @@
-import net.sf.saxon.Transform;
-
 class RunSaxon {
 	public static void main(String args[]) {
 		for (int a = 0; a < args.length; a++) {
 			try {
+				System.err.println(args[a]);
 				net.sf.saxon.Transform.main(new String[] {
 							"-warnings:recover",
 							"-o",
