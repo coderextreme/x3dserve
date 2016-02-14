@@ -9,6 +9,7 @@
     "socket.io": "*"
   },
   "scripts": {
-    "start": "node app.js"
+    "start": "node app.js",
+    "postinstall": "javac -cp saxon9B.jar RunSaxon.java"
   }
 }
