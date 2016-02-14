@@ -8,6 +8,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
     <script type="text/javascript" src="http://cdn.socket.io/socket.io-1.3.7.js"></script>
     <script type="text/javascript" src="X3DJSONLD.js"></script>
+    <script type="text/javascript" src="PrototypeExpander.js"></script>
     <style type="text/css">
     X3D {
         background:#000;
@@ -20,7 +21,9 @@
 <body>
 Select an X3D file to load and convert to JSON
 <select>
+<option>force.x3d</option>
 <option>/etc/passwd</option>
+<option>flipper.x3d</option>
 <option>examples/Basic/AdditiveManufacturing/CleatClamp.x3d</option>
 <option>examples/Basic/CAD/CadDesignPatternExampleBushing.x3d</option>
 <option>examples/Basic/CAD/CadGeometryExternPrototypes.x3d</option>
@@ -15685,7 +15688,9 @@ Select an X3D file to load and convert to JSON
 				$('textarea#json').val(message);
 				$("#x3domjson X3D").remove();
 				if (err === 'ok') {
-					loadX3DJS("#x3domjson", JSON.parse(message), url);
+					var json = JSON.parse(message);
+					prototypeExpander(json, "");
+					loadX3DJS("#x3domjson", json, url);
 				} else {
 					alert(JSON.stringify(err));
 				}

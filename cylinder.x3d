@@ -1,0 +1,67 @@
+        <ProtoDeclare name="Cylinder">
+            <ProtoInterface>
+                <field name="positionA" accessType="inputOnly" type="SFVec3f"/>
+                <field name="positionB" accessType="inputOnly" type="SFVec3f"/>
+            </ProtoInterface>
+            <ProtoBody>
+                <Transform DEF="rotationz" rotation="0 0 1 0">
+                <Transform DEF="rotationx" rotation="1 0 0 0">
+                <Transform DEF="rotationy" rotation="0 1 0 0">
+                    <Shape>
+                        <Cylinder/>
+                        <Appearance>
+                            <Material diffuseColor="0 1 0"/>
+                        </Appearance>
+                    </Shape>              
+                </Transform>
+                </Transform>
+                </Transform>
+                <Script DEF="MoveCylinder">
+                    <field name="rotationx" accessType="outputOnly" type="SFRotation"/>
+                    <field name="rotationy" accessType="outputOnly" type="SFRotation"/>
+                    <field name="rotationz" accessType="outputOnly" type="SFRotation"/>
+                    <field name="translation" accessType="outputOnly" type="SFVec3f"/>
+                    <field name="scale" accessType="outputOnly" type="SFVec3f"/>
+                    <field name="endA" accessType="inputOnly" type="SFVec3f"/>
+                    <field name="endB" accessType="inputOnly" type="SFVec3f"/>
+		    <IS>
+                        <connect nodeField='endA' protoField="positionA"/>
+                        <connect nodeField='endB' protoField="positionB"/>
+		    </IS>
+<![CDATA[
+ecmascript:
+			function set_ends() {
+				scale[0] = Math.abs(endA[0] - endB[0]) / 2;
+				scale[1] = Math.abs(endA[1] - endB[1]) / 2;
+				scale[2] = Math.abs(endA[2] - endB[2]) / 2;
+				var x = (endA[0] - endB[0]) / 2;
+				var y = (endA[1] - endB[1]) / 2;
+				var z = (endA[2] - endB[2]) / 2;
+				var r = Math.sqrt(x * x + y * y + z * z);
+				rotationz = new MFRotation(
+					0,
+					0,
+					1,
+					Math.acos(x/r));
+				rotationx = new MFRotation(
+					1,
+					0,
+					0,
+					Math.asin(y/r));
+				rotationy = new MFRotation(
+					0,
+					-1,
+					0,
+					Math.acos(z/r));
+				translation[0] = (endA[0] + endB[0]) / 2;
+				translation[1] = (endA[1] + endB[1]) / 2;
+				translation[2] = (endA[2] + endB[2]) / 2;
+]]>
+                </Script>
+                <TimeSensor DEF='nodeClock' cycleInterval='3' loop='true'></TimeSensor>
+                <ROUTE fromNode='nodeClock' fromField='cycleTime' toNode='MoveCylinder' toField='set_ends'/>
+                <ROUTE fromNode='MoveCylinder' fromField='rotationz' toNode='rotationz' toField='rotation'/>
+                <ROUTE fromNode='MoveCylinder' fromField='rotationy' toNode='rotationy' toField='rotation'/>
+                <ROUTE fromNode='MoveCylinder' fromField='rotationz' toNode='rotationz' toField='rotation'/>
+            </ProtoBody>
+        </ProtoDeclare>

@@ -1,15 +1,32 @@
 "use strict";
 
+// For X3D Browser functions
+if (typeof Browser === 'undefined') {
+	var Browser = {
+		print : function(string) { if (typeof console !== 'undefined' && typeof string !== 'undefined') console.error(string); },
+		println : function(string) { if (typeof console !== 'undefined' && typeof string !== 'undefined') console.error(string); },
+		stringToArray : function(obj) {
+			if (typeof obj === 'object') {
+				return obj;
+			} else {
+				return JSON.parse('['+obj+']');
+			}
+		},
+		createX3DFromString : function(string) { return loadX3DJS(undefined, JSON.parse(string), 'foo.json'); }
+	}
+}
+
 // 'http://www.web3d.org/specifications/x3d-namespace'
 
 // Load X3D JSON into web page
 
-function printElement(el, xml) {
+function printElement(el, indent, xml) {
+	var INDENT = "";
         var child;
         var key;
         var attrs = "";
         if (typeof el === 'string') {
-                xml.push(el);
+                xml.push(indent+el);
                 return;
         }
         if (el.key) {
@@ -18,32 +35,40 @@ function printElement(el, xml) {
 	for (var a in el.attributes) {
                 attrs += " "+a+"='"+el.attributes[a]+"'";
         }
-        if (el.children && typeof key !== 'undefined' && attrs !== '' ) {
-                xml.push("<"+key+attrs+">");
-        } else if (el.children && typeof key !== 'undefined' ) {
-                xml.push("<"+key+">");
-        } else if (typeof key !== 'undefined' && attrs !== '' ) {
-                xml.push("<"+key+attrs+"/>");
-        } else if (typeof key !== 'undefined' ) {
-                xml.push("<"+key+"/>");
-        }
+        if (typeof key !== 'undefined') {
+		var keyattr = "";
+		var keytrail = "";
+		if (attrs !== '' ) {
+			keyattr = "<"+key+attrs;
+		} else {
+			keyattr = "<"+key;
+		}
+		if (el.children) {
+			keytrail = ">";
+		} else {
+			keytrail = "/>";
+		}
+		xml.push(indent+keyattr+keytrail);
+	}
         for (child in el) {
                 if (child === "children") {
-                        printElement(el[child], xml);
+                        printElement(el[child], indent+INDENT, xml);
                 } else {
                         if (isNaN(parseInt(child))) {
                         } else {
-                                printElement(el[child], xml);
+                                printElement(el[child], indent+INDENT, xml);
                         }
                 }
         }
         if (el.children && typeof key !== 'undefined') {
-                xml.push("</"+key+">");
+                xml.push(indent+"</"+key+">");
         }
 }
 
 function elementSetAttribute(element, key, value, attributes) {
-	element.setAttribute(key, value);
+	if (element !== null) {
+		element.setAttribute(key, value);
+	}
 	if (typeof value === 'string') {
 		attributes[key] = value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, '&lt;').replace(/>/g, '&gt;');
 	} else {
@@ -76,31 +101,54 @@ function ConvertObject(key, object, element, path) {
 			var el = ConvertChildren(key, object[key], element, path);
 			children.push.apply(children, el.children);
 		} else if (key === '#comment') {
-			// a comment within a script
-			var child = document.createComment(object[key].join("\n"));
-			children.push("<!--"+object[key].join("\n")+"-->");
-			element.appendChild(child);
+			for (var c in object[key]) {
+				var child = null;
+				if (element !== null && typeof document !== 'undefined') {
+					child = document.createComment(object[key][c]);
+				}
+				children.push("<!--"+object[key][c]+"-->");
+				if (element !== null && child !== null) {
+					element.appendChild(child);
+				}
+			}
 		} else if (key === '#sourceText') {
-			var child = document.createTextNode(object[key].join("\n"));
-			children.push(object[key].join("\n"));
-			element.appendChild(child);
+			var child = null;
+			if (element !== null && typeof document !== 'undefined') {
+				// child = document.createCDATASection(object[key].join("\n").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&"));
+				child = document.createTextNode(object[key].join("\n"));
+			}
+			children.push('<![CDATA['+object[key].join("\n").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&")+']]>');
+			// children.push(object[key].join("\n"));
+			if (element !== null && child !== null) {
+				element.appendChild(child);
+			}
 		} else {
-			if (key === 'ROUTE' || key === 'field' || key === 'meta') {
+			if (key === 'connect' || key === 'fieldValue' || key === 'field' || key === 'meta') {
 				for (var childkey in object[key]) {  // for each field
 					if (typeof object[key][childkey] === 'object') {
-						var child = document.createElement(key);
+						var child = null;
+						if (element !== null && typeof document !== 'undefined') {
+							child = document.createElement(key);
+						}
 						var el = ConvertToX3DOM(object[key][childkey], childkey, child, path);
 						el.key = key;
 						children.push(el);
-						element.appendChild(child);
+						if (element !== null && child !== null) {
+							element.appendChild(child);
+						}
 					}
 				}
 			} else {
-				var child = document.createElement(key);
+				var child = null;
+				if (element !== null && typeof document !== 'undefined') {
+					child = document.createElement(key);
+				}
 				var el = ConvertToX3DOM(object[key], key, child, path);
 				el.key = key;
 				children.push(el);
-				element.appendChild(child);
+				if (element !== null && child !== null) {
+					element.appendChild(child);
+				}
 			}
 		}
 	}
@@ -114,7 +162,6 @@ function ConvertToX3DOM(object, parentkey, element, path) {
 	var arrayOfStrings = false;
 	var attributes = {};
 	var children = [];
-	var foundRoute = false;
 	for (key in object) {
 		if (isNaN(parseInt(key))) {
 			isArray = false;
@@ -130,45 +177,36 @@ function ConvertToX3DOM(object, parentkey, element, path) {
 			} else if (typeof object[key] === 'boolean') {
 				localArray.push(object[key]);
 			} else if (typeof object[key] === 'object') {
+				if (object[key] != null && typeof object[key].join === 'function') {
+					localArray.push(object[key].join(" "));
+				}
 				children.push(ConvertToX3DOM(object[key], key, element, path));
 			} else {
-				console.log("Unknown type found in array "+typeof object[key]);
+				console.error("Unknown type found in array "+typeof object[key]);
 			}
 		} else if (typeof object[key] === 'object') {
-			if (key !== "ROUTE") {
-				var el = ConvertObject(key, object, element, path);
-				for (var a in el.attributes) {
-					attributes[a] = el.attributes[a];
-				}
-				children.push(el);
-			} else {
-				foundRoute = true;
+			var el = ConvertObject(key, object, element, path);
+			for (var a in el.attributes) {
+				attributes[a] = el.attributes[a];
 			}
+			children.push(el);
 		} else if (typeof object[key] === 'number') {
 			elementSetAttribute(element, key.substr(1),object[key], attributes);
 		} else if (typeof object[key] === 'string') {
 			if (key !== '#comment') {
 				elementSetAttribute(element, key.substr(1),object[key], attributes);
 			} else {
-				var child = document.createComment(object[key]);
+				if (element !== null) {
+					var child = document.createComment(object[key]);
+					element.appendChild(child);
+				}
 				children.push("<!--"+object[key]+"-->");
-				element.appendChild(child);
 			}
 		} else if (typeof object[key] === 'boolean') {
 			elementSetAttribute(element, key.substr(1),object[key], attributes);
 		} else {
-			console.log("Unknown type found in object "+typeof object[key]);
+			console.error("Unknown type found in object "+typeof object[key], object, key);
 		}
-	}
-	// put ROUTEs last
-	if (foundRoute) {
-		var el = ConvertObject("ROUTE", object, element, path);
-		for (var a in el.attributes) {
-			attributes[a] = el.attributes[a];
-		}
-		children.push(el);
-	} else {
-		foundRoute = false;
 	}
 	if (isArray) {
 		if (parentkey.substr(0,1) === '@') {
@@ -217,26 +255,32 @@ function ConvertToX3DOM(object, parentkey, element, path) {
 }
 
 function loadX3DJS(selector, json, path, xml) {
-	var element = document.querySelector(selector);
-	if (element === null) {
-		console.log("selector found nothing in document", selector);
-	} else {
-		var el = ConvertToX3DOM(json, "", element, path);
-		xml = xml || [];
+	var element = null;
+	if (typeof document !== 'undefined') {
+		if (typeof selector !== 'undefined') {
+			element = document.querySelector(selector);
+		} else {
+			element = document.createElement('div')
+		}
+	}
+	var el = ConvertToX3DOM(json, "", element, path);
+	if (typeof x3dom !== 'undefined' && typeof x3dom.reload === 'function') {
+		x3dom.reload();
+	}
+	if (typeof xml !== 'undefined') {
 		xml.push('<?xml version="1.0" encoding="UTF-8"?>');
 		xml.push('<!DOCTYPE X3D PUBLIC "ISO//Web3D//DTD X3D 3.3//EN" "http://www.web3d.org/specifications/x3d-3.3.dtd">');
-/*
-		console.log(el);
-		console.log(el.children[0]);
-		console.log(el.children[0].children[0]);
-		console.log(el.children[0].children[0].attributes);
-*/
- 		// for Cobweb
+		// for Cobweb
 		el.children[0].children[0].attributes["id"] = "x3dele";
 		el.children[0].children[0].attributes["xmlns:xsd"] = 'http://www.w3.org/2001/XMLSchema-instance';
-		printElement(el, xml);
-		if (typeof x3dom !== 'undefined') {
-			x3dom.reload();
-		}
+		printElement(el, "", xml);
+	}
+	return element;
+}
+
+if (typeof module === 'object')  {
+	module.exports = {
+		loadX3DJS : loadX3DJS,
+		Browser : Browser
 	}
 }
