@@ -6,7 +6,7 @@ var port = process.env.PORT || 3000;
 var fs = require('fs');
 var config = require("./config");
 var path = require('path');
-var runsaxon = require('./runsaxon');
+var runsaxon = require('./allsaxon');
 
 app.use(express.static(__dirname));
 
@@ -21,22 +21,19 @@ path.resolve(__dirname + "/examples"),
   }
 );
 
-function runAndSend(socket, infile, outfile) {
-	runsaxon(infile, outfile, function(err, results) {
-			if (err) throw err;
-		fs.readFile(outfile, {}, function(err, content) {
-			fs.unlink(outfile);
-			if (err) throw err;
-			console.log('sending back', content.toString());
-			try {
-				JSON.parse(content.toString());
-				socket.emit('json', 'ok', content.toString());
-			} catch (e) {
-				console.log(e);
-				socket.emit('json', e, content.toString());
-			}
-		});
-	});
+function runAndSend(socket, infile) {
+	runsaxon([infile]);
+	var outfile = infile.substr(0, infile.lastIndexOf("."))+".json2";
+	var content = fs.readFileSync(outfile);
+	console.log('sending back', content.toString());
+	try {
+		JSON.parse(content.toString());
+		socket.emit('json', 'ok', content.toString());
+	} catch (e) {
+		console.log(e);
+		socket.emit('json', e, content.toString());
+	}
+	return outfile;
 }
 
 var count = 0;
@@ -49,8 +46,8 @@ io.on('connection', function(socket){
 	socket.on("x3d", function(infile) {
 		console.log('receiving', infile);
 		if (infile.match(/^[^<>&{} "'\[\]\$\\;]+\.x3d$/)) {
-			var outfile = (count++)+".json";
-			runAndSend(socket, infile, outfile);
+			var outfile = runAndSend(socket, infile);
+			fs.unlink(outfile);
 		}
 	});
 });

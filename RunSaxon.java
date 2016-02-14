@@ -1,18 +1,19 @@
-import java.io.*;
+import net.sf.saxon.Transform;
 
 class RunSaxon {
-	public static void main(String args[]) throws Exception {
-		Process p = Runtime.getRuntime().exec(
-				new String [] {"java",
-					"-cp",
-					"/Users/johncarlson/Downloads/www.web3d.org/x3d/tools/jar/saxon9B.jar",
-					"net.sf.saxon.Transform",
-					"-warnings:recover",
-					"-o",
-					args[1],
-					args[0],
-					"X3dToJson.xslt" });
-			// -t  #timing -c # compiled
-		p.waitFor();
+	public static void main(String args[]) {
+		for (int a = 0; a < args.length; a++) {
+			try {
+				net.sf.saxon.Transform.main(new String[] {
+							"-warnings:recover",
+							"-o",
+							args[a].substring(0, args[a].lastIndexOf("."))+".json2",
+							args[a],
+							"X3dToJson.xslt" });
+				// -t  #timing -c # compiled
+			} catch (Exception e) {
+				System.err.println(e.getMessage());
+			}
+		}
 	}
 }
