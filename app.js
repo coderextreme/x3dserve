@@ -22,18 +22,20 @@ path.resolve(__dirname + "/examples"),
 );
 
 function runAndSend(socket, infile, outfile) {
-	runsaxon(infile, outfile);
-	fs.readFile(outfile, {}, function(err, content) {
-		fs.unlink(outfile);
-		if (err) throw err;
-		console.log('sending back', content.toString());
-		try {
-			JSON.parse(content.toString());
-			socket.emit('json', 'ok', content.toString());
-		} catch (e) {
-			console.log(e);
-			socket.emit('json', e, content.toString());
-		}
+	runsaxon(infile, outfile, function(err, results) {
+			if (err) throw err;
+		fs.readFile(outfile, {}, function(err, content) {
+			fs.unlink(outfile);
+			if (err) throw err;
+			console.log('sending back', content.toString());
+			try {
+				JSON.parse(content.toString());
+				socket.emit('json', 'ok', content.toString());
+			} catch (e) {
+				console.log(e);
+				socket.emit('json', e, content.toString());
+			}
+		});
 	});
 }
 
