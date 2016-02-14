@@ -15662,13 +15662,32 @@ Select an X3D file to load and convert to JSON
 <option>examples/X3dForWebAuthors/KelpForestExhibit/TreeFishPlaque.x3d</option>
 <option>examples/X3dForWebAuthors/newScene.x3d</option>
 </select>
+
+Search file names:
 <input type="text" onchange="filter(event)"></input>
+
+Search contents:
+<input type="text" onchange="filterContents(event)"></input>
+
 <textarea id="json" rows="15" cols="80"></textarea><br>
+
 <div id="x3domjson"></div>
+
 <script>
 	var socket = io();
+	function filterContents(event) {
+		$("option").remove();
+		console.log("searching", event.target.value);
+		socket.emit("search", event.target.value);
+		socket.on('result', function(filename) {
+			console.log("found", event.target.value, "in", filename);
+			if ($('option[value="'+filename+'"]').length === 0) {
+				$("select").append("<option value='"+filename+"'>"+filename+"</option>");
+			}
+		});
+	}
 	function filter(event) {
-		$.map($("select option"), function(option, i) {
+		$.map($("option"), function(option, i) {
 			var text = $(option).text();
 			if (text.indexOf(event.target.value) >= 0) {
 				$(option).show();
@@ -15682,7 +15701,7 @@ Select an X3D file to load and convert to JSON
 
 	$(document).ready(function() {
 		$("select").change(function() {
-			var url = $('select option:selected').text();
+			var url = $('option:selected').text();
 			socket.emit("x3d", url);
 			socket.on('json', function(err, message) {
 				$('textarea#json').val(message);
