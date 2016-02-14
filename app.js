@@ -21,26 +21,34 @@ path.resolve(__dirname + "/examples"),
   }
 );
 
+function runAndSend(socket, infile, outfile) {
+	runsaxon(infile, outfile);
+	fs.readFile(outfile, {}, function(err, content) {
+		fs.unlink(outfile);
+		if (err) throw err;
+		console.log('sending back', content.toString());
+		try {
+			JSON.parse(content.toString());
+			socket.emit('json', 'ok', content.toString());
+		} catch (e) {
+			console.log(e);
+			socket.emit('json', e, content.toString());
+		}
+	});
+}
+
+var count = 0;
 io.on('connection', function(socket){
+	socket.on('disconnect', function() {
+	});
+	socket.on('error', function(e) {
+		console.log("socket error", e);
+	});
 	socket.on("x3d", function(infile) {
 		console.log('receiving', infile);
-		if (infile.match(/^[^<>&{} "'\[\]\$\\]+\.x3d$/)) {
-			runsaxon(infile, "file.json");
-			var content = fs.readFileSync("file.json");
-			console.log('sending back', content.toString());
-			try {
-				JSON.parse(content.toString());
-				socket.emit('json', 'ok', content.toString());
-			} catch (e) {
-				console.log(e);
-				socket.emit('json', e, content.toString());
-			}
-			socket.on('disconnect', function() {
-				console.log('killing');
-			});
-			socket.on('error', function(e) {
-				console.log("socket error", e);
-			});
+		if (infile.match(/^[^<>&{} "'\[\]\$\\;]+\.x3d$/)) {
+			var outfile = (count++)+".json";
+			runAndSend(socket, infile, outfile);
 		}
 	});
 });
