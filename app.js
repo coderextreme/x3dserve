@@ -25,7 +25,7 @@ path.resolve(__dirname + "/examples"),
 
 function runAndSend(socket, infile) {
 	runsaxon([infile]);
-	var outfile = infile.substr(0, infile.lastIndexOf("."))+".json2";
+	var outfile = infile.substr(0, infile.lastIndexOf("."))+".json";
 	var content = fs.readFileSync(outfile);
 	var json = JSON.parse(content.toString());
 	externPrototypeExpander(outfile, json);

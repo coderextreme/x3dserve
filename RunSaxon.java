@@ -37,7 +37,7 @@ protected static class ExitException extends SecurityException
 					net.sf.saxon.Transform.main(new String[] {
 								"-warnings:recover",
 								"-o",
-								args[a].substring(0, args[a].lastIndexOf("."))+".json2",
+								args[a].substring(0, args[a].lastIndexOf("."))+".json",
 								args[a],
 								"X3dToJson.xslt" });
 					// -t  #timing -c # compiled
