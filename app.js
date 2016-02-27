@@ -50,12 +50,12 @@ io.on('connection', function(socket){
 	socket.on("search", function(string) {
 		console.log("searching", string);
 		glob(config.examples+'**/*.x3d', function( err, files ) {
-			 if (err) throw err;
+			 if (err) return;
 			 files.forEach(function(file) {
 				console.log("searching", string, "in", file);
 				file = "examples/"+file.substr(config.examples.length);
 				fs.readFile(file, 'utf-8', function(err, contents) {
-		    		    if (err) throw err;
+		    		    if (err) return;
 				    if (contents.indexOf(string) != -1) {
 					console.log("found", string, "in", file);
 					socket.emit('result', file);
