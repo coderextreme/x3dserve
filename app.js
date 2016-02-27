@@ -79,10 +79,10 @@ io.on('connection', function(socket){
 		console.log("calling", "gpg", args);
 		gpg.call(input, args, function(err, output) {
 			if (err) {
-				console.log("error", err, output.toString());
+				console.log("error", err);
 				socket.emit('gpgerror', err);
 				if (args[0] === '--decrypt') {
-					socket.emit('json', err, output.toString());
+					socket.emit('json', err, '');
 				}
 			} else {
 				console.log("sending back", output.toString());
