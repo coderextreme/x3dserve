@@ -77,21 +77,25 @@ io.on('connection', function(socket){
 	});
 	socket.on("gpg", function(input, args) {
 		console.log("calling", "gpg", args);
-		gpg.call(input, args, function(err, output) {
-			if (err) {
-				console.log("error", err);
-				socket.emit('gpgerror', err);
-				if (args[0] === '--decrypt') {
-					socket.emit('json', err, '');
+		try {
+			gpg.call(input, args, function(err, output) {
+				if (err) {
+					console.log("error", err);
+					socket.emit('gpgerror', err);
+					if (args[0] === '--decrypt') {
+						socket.emit('json', err, '');
+					}
+				} else {
+					console.log("sending back", output.toString());
+					socket.emit('gpgdata', output.toString());
+					if (args[0] === '--decrypt') {
+						socket.emit('json', 'ok', output.toString());
+					}
 				}
-			} else {
-				console.log("sending back", output.toString());
-				socket.emit('gpgdata', output.toString());
-				if (args[0] === '--decrypt') {
-					socket.emit('json', 'ok', output.toString());
-				}
-			}
-		});
+			});
+		} catch (e) {
+			socket.emit('gpgerror', e);
+		}
 	});
 });
 

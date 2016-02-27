@@ -15675,6 +15675,8 @@ Search contents:
 <br>
 Sign: <input id="sign" type="checkbox" checked="true"></input>
 Encrypt: <input id="encrypt" type="checkbox" checked="true"></input>
+Passphrase: <input id="passphrase" type="password"></input>
+Recipient: <input id="recipient" type="text" value="yottzumm@gmail.com"></input>  <!-- by default, send to me -->
 <button onclick="crypto(); return false;">Crypto!</button>
 Crypto Results:
 <textarea id="cryptojson" rows="15" cols="80"></textarea><br>
@@ -15727,7 +15729,7 @@ Crypto Results:
 	});
 	socket.on('gpgerror', function(err) {
 		if (err) {
-			alert("got error from GPG on server: "+err);
+			alert("got error from GPG on server: "+JSON.stringify(err));
 		}
 	});
 	socket.on('gpgdata', function(message) {
@@ -15741,13 +15743,13 @@ function crypto() {
 		if ($('#sign').is(':checked')) {
 			args.push('--sign');
 			args.push('--passphrase');
-			args.push('gpgpss');
+			args.push($('#passphrase').val());
 			args.push('--armor');
 		}
 		if ($('#encrypt').is(':checked')) {
 			args.push('--encrypt');
 			args.push('--recipient');
-			args.push('B59B18B9');
+			args.push($('#recipient').val());
 			args.push('--armor');
 		}
 		if ($('#encrypt').is(':checked') || $('#sign').is(':checked')) {
@@ -15756,7 +15758,7 @@ function crypto() {
 			// send encrypted results and get decrypted back
 			args.push('--decrypt');
 			args.push('--passphrase');
-			args.push('gpgpss');
+			args.push($('#passphrase').val());
 			socket.emit("gpg", $('textarea#cryptojson').val(), args);
 		}
 }
