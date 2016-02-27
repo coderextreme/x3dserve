@@ -427,7 +427,8 @@ POSSIBILITY OF SUCH DAMAGE.
 					                                        ($fieldName = 'viewpoint')          or ($fieldName = 'voxels')            or
 					                                        ($fieldName = 'weightTransferFunction1') or ($fieldName = 'weightTransferFunction2') or
                                                                                 ($parentName='CADFace'         and $fieldName = 'shape') or
-                                                                                ($parentName='CollidableShape' and $fieldName = 'shape')" />
+                                                                                ($parentName='CollidableShape' and $fieldName = 'shape') or
+                                                                                ($parentName='Sound'           and $fieldName = 'source')" />
 
 					<!-- contained node containerField -->
                     <xsl:if test="not(local-name() = 'ProtoInterface') and not(local-name() = 'ProtoBody')">

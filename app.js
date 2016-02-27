@@ -9,6 +9,7 @@ var path = require('path');
 var runsaxon = require('./allsaxon');
 var externPrototypeExpander = require("./ServerPrototypeExpander");
 var glob = require( 'glob' );  
+var gpg = require( 'gpg' );  
 
 app.use(express.static(__dirname));
 
@@ -31,10 +32,10 @@ function runAndSend(socket, infile) {
 	externPrototypeExpander(outfile, json);
 	console.log('sending back', json);
 	try {
-		socket.emit('json', 'ok', JSON.stringify(json));
+		socket.emit('json', 'ok', JSON.stringify(json), outfile);
 	} catch (e) {
 		console.log(e);
-		socket.emit('json', e, JSON.stringify(json));
+		socket.emit('json', e, JSON.stringify(json), outfile);
 	}
 	return outfile;
 }
@@ -73,6 +74,24 @@ io.on('connection', function(socket){
 				console.log(e);
 			}
 		}
+	});
+	socket.on("gpg", function(input, args) {
+		console.log("calling", "gpg", args);
+		gpg.call(input, args, function(err, output) {
+			if (err) {
+				console.log("error", err, output.toString());
+				socket.emit('gpgerror', err);
+				if (args[0] === '--decrypt') {
+					socket.emit('json', err, output.toString());
+				}
+			} else {
+				console.log("sending back", output.toString());
+				socket.emit('gpgdata', output.toString());
+				if (args[0] === '--decrypt') {
+					socket.emit('json', 'ok', output.toString());
+				}
+			}
+		});
 	});
 });
 

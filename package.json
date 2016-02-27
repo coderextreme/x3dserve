@@ -5,6 +5,7 @@
   "dependencies": {
     "express": "*",
     "glob": "^7.0.0",
+    "gpg": "^0.4.0",
     "java": "^0.6.0",
     "socket.io": "*"
   },
@@ -12,7 +13,7 @@
     "start": "node app.js",
     "postinstall": "javac -cp saxon9B.jar RunSaxon.java"
   },
-  "engines" : {
-    "java" : "8"
+  "engines": {
+    "java": "8"
   }
 }

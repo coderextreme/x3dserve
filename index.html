@@ -12,6 +12,8 @@
     <style type="text/css">
     X3D {
         background:#000;
+	width:960px;
+	height:540px;
     }
     table td, table td * {
         vertical-align: top;
@@ -15662,7 +15664,7 @@ Select an X3D file to load and convert to JSON
 <option>examples/X3dForWebAuthors/KelpForestExhibit/TreeFishPlaque.x3d</option>
 <option>examples/X3dForWebAuthors/newScene.x3d</option>
 </select>
-
+<br>
 Search file names:
 <input type="text" onchange="filter(event)"></input>
 
@@ -15670,7 +15672,13 @@ Search contents:
 <input type="text" onchange="filterContents(event)"></input>
 
 <textarea id="json" rows="15" cols="80"></textarea><br>
-
+<br>
+Sign: <input id="sign" type="checkbox" checked="true"></input>
+Encrypt: <input id="encrypt" type="checkbox" checked="true"></input>
+<button onclick="crypto(); return false;">Crypto!</button>
+Crypto Results:
+<textarea id="cryptojson" rows="15" cols="80"></textarea><br>
+<br>
 <div id="x3domjson"></div>
 
 <script>
@@ -15679,12 +15687,6 @@ Search contents:
 		$("option").remove();
 		console.log("searching", event.target.value);
 		socket.emit("search", event.target.value);
-		socket.on('result', function(filename) {
-			console.log("found", event.target.value, "in", filename);
-			if ($('option[value="'+filename+'"]').length === 0) {
-				$("select").append("<option value='"+filename+"'>"+filename+"</option>");
-			}
-		});
 	}
 	function filter(event) {
 		$.map($("option"), function(option, i) {
@@ -15703,19 +15705,61 @@ Search contents:
 		$("select").change(function() {
 			var url = $('option:selected').text();
 			socket.emit("x3d", url);
-			socket.on('json', function(err, message) {
-				$('textarea#json').val(message);
-				$("#x3domjson X3D").remove();
-				if (err === 'ok') {
-					var json = JSON.parse(message);
-					prototypeExpander(json, "");
-					loadX3DJS("#x3domjson", json, url);
-				} else {
-					alert(JSON.stringify(err));
-				}
-			});
 		});
 	});
+	socket.on('result', function(filename) {
+		console.log("found", event.target.value, "in", filename);
+		if ($('option[value="'+filename+'"]').length === 0) {
+			$("select").append("<option value='"+filename+"'>"+filename+"</option>");
+		}
+	});
+	socket.on('json', function(err, message, url) {
+		$('textarea#json').val(message);
+		$("#x3domjson").empty();
+		if (err === 'ok') {
+			var json = JSON.parse(message);
+			prototypeExpander(json, "");
+			$("#x3domjson").append(loadX3DJS(json, url));
+			x3dom.reload();
+		} else {
+			alert(JSON.stringify(err));
+		}
+	});
+	socket.on('gpgerror', function(err) {
+		if (err) {
+			alert("got error from GPG on server: "+err);
+		}
+	});
+	socket.on('gpgdata', function(message) {
+		console.log("got message", message);
+		$('textarea#cryptojson').val(message);
+	});
+
+function crypto() {
+		var args = [];
+		console.log("gpg", $('textarea#json').val(), args);
+		if ($('#sign').is(':checked')) {
+			args.push('--sign');
+			args.push('--passphrase');
+			args.push('gpgpss');
+			args.push('--armor');
+		}
+		if ($('#encrypt').is(':checked')) {
+			args.push('--encrypt');
+			args.push('--recipient');
+			args.push('B59B18B9');
+			args.push('--armor');
+		}
+		if ($('#encrypt').is(':checked') || $('#sign').is(':checked')) {
+			socket.emit("gpg", $('textarea#json').val(), args);
+		} else {
+			// send encrypted results and get decrypted back
+			args.push('--decrypt');
+			args.push('--passphrase');
+			args.push('gpgpss');
+			socket.emit("gpg", $('textarea#cryptojson').val(), args);
+		}
+}
 </script>
 </body>
 </html>
