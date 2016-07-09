@@ -4,9 +4,9 @@
   "private": true,
   "dependencies": {
     "express": "*",
-    "glob": "^7.0.0",
-    "gpg": "^0.4.0",
-    "java": "^0.6.0",
+    "glob": "*",
+    "gpg": "*",
+    "java": "*",
     "socket.io": "*"
   },
   "scripts": {
