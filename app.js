@@ -2,14 +2,20 @@ var express = require('express');
 var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
-var port = process.env.PORT || 3000;
+var port = process.env.PORT || 3002;
 var fs = require('fs');
 var config = require("./config");
 var path = require('path');
 var runsaxon = require('./allsaxon');
-var externPrototypeExpander = require("./ServerPrototypeExpander");
 var glob = require( 'glob' );  
 var gpg = require( 'gpg' );  
+
+var X3DJSONLD = require('./X3DJSONLD.js');
+var loadURLs = X3DJSONLD.loadURLs;
+var PE = require('./PrototypeExpander')
+PE.setLoadURLs(loadURLs);
+var prototypeExpander = PE.prototypeExpander;
+var externPrototypeExpander = PE.externPrototypeExpander;
 
 app.use(express.static(__dirname));
 
@@ -19,7 +25,7 @@ path.resolve(__dirname + "/examples"),
 'junction',
  function (err) {
         if (err) {
-                console.log( err.code === 'EEXIST' ? "Go to the link above!\n" : err);
+                console.log( err.code === 'EEXIST' ? "Link exists!\n" : err);
         }
   }
 );
@@ -29,7 +35,7 @@ function runAndSend(socket, infile) {
 	var outfile = infile.substr(0, infile.lastIndexOf("."))+".json";
 	var content = fs.readFileSync(outfile);
 	var json = JSON.parse(content.toString());
-	externPrototypeExpander(outfile, json);
+	json = externPrototypeExpander(outfile, json);
 	console.log('sending back', json);
 	try {
 		socket.emit('json', 'ok', JSON.stringify(json), outfile);
@@ -103,9 +109,7 @@ io.on('error', function(e) {
 	console.log("server error", e);
 });
 
-http.listen(port, function () {
-    console.log('listening on http://localhost:' + port);
-});
+http.listen(port);
 
 http.on('error', function (e) {
   if (e.code == 'EADDRINUSE') {
