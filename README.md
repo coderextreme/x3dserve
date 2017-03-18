@@ -12,6 +12,12 @@ first set JAVA_HOME
 ```
 npm install
 node app.js
+gpg --gen-key
+
 ```
 
-go to http://localhost:3002
+go to http://localhost:3000
+
+Select a model
+
+Type in passphrase and recipient (found in keyring) then press Crypto!  Copy and paste out encrypted text.
