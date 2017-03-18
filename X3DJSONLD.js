@@ -26,6 +26,7 @@ if (typeof Browser === 'undefined') {
 }
 
 function processURLs(localArray, path) {
+	/*
 	var url;
 	// No longer need to split
 	for (url in localArray) {
@@ -56,19 +57,24 @@ function processURLs(localArray, path) {
 		var hash = "";
 		if (h >= 0) {
 			hash = localArray[url].substring(h);
-			localArray[url] = localArray[url].substring(0, h);
+			// localArray[url] = localArray[url].substring(0, h);
 		}
 		var x3d = localArray[url].lastIndexOf(".x3d") ;
 		if (x3d === localArray[url].length - 4) {
-			localArray[url] = localArray[url].substring(0, x3d)+".json";
+			localArray[url] = localArray[url].substring(0, x3d)+".json" + hash;
 		}
 		var wrl = localArray[url].lastIndexOf(".wrl") ;
 		if (wrl === localArray[url].length - 4) {
-			localArray[url] = localArray[url].substring(0, wrl)+".json";
+			localArray[url] = localArray[url].substring(0, wrl)+".json" + hash;
+		}
+		var wrz = localArray[url].lastIndexOf(".wrz") ;
+		if (wrz === localArray[url].length - 4) {
+			localArray[url] = localArray[url].substring(0, wrz)+".json" + hash;
 		}
 			
         }
 	// console.error("Processed URLs", localArray.join(" "));
+	*/
 	return localArray;
 }
 
@@ -134,12 +140,12 @@ function loadURLs(loadpath, urls, loadedCallback) {
 						}
 					} else if (typeof fs !== 'undefined' && protocol.indexOf("http") !== 0) {
 						// should be async, but out of memory
-						if (fs.statSync(url).isFile()) {
+						try {
 							// console.error("Loading FILE URL", url);
 							var data = fs.readFileSync(url);
 							loadedCallback(data.toString(), url);
-						} else {
-							console.error("File doesn't exist or is not available,", url);
+						} catch (e) {
+							throw(e+ " File doesn't exist or is not available, "+ url);
 						}
 					} else if (typeof $ !== 'undefined' && typeof $.get === 'function') {
 						// console.error("Loading Relative URL", url);
@@ -151,28 +157,17 @@ function loadURLs(loadpath, urls, loadedCallback) {
 					}
 				})(url);
 			} catch (e) {
-				console.error(e);
+			 	throw(e);
 			}
 		}
 	}
 }
 
 var x3djsonNS;
-var encoding;
-
-function getEncoding() {
-	return encoding;
-}
-
-function setEncoding(enc) {
-	encoding = enc;
-}
 
 // 'http://www.web3d.org/specifications/x3d-namespace'
 
 // Load X3D JSON into web page
-
-var containerFields = [];
 
 
 function elementSetAttribute(element, key, value) {
@@ -180,7 +175,6 @@ function elementSetAttribute(element, key, value) {
 		// JSON Schema
 	} else if (key === 'ncoding') {
 		// encoding, UTF-8, UTF-16 or UTF-32
-		setEncoding(value);
 	} else {
 		if (typeof element.setAttribute === 'function') {
 			element.setAttribute(key, value);
@@ -190,21 +184,19 @@ function elementSetAttribute(element, key, value) {
 
 function ConvertChildren(parentkey, object, element, path) {
 	var key;
-	containerFields.unshift(parentkey.substr(1));
 
 	for (key in object) {
 		if (typeof object[key] === 'object') {
 			if (isNaN(parseInt(key))) {
-				ConvertObject(key, object, element, path);
+				ConvertObject(key, object, element, path, parentkey.substr(1));
 			} else {
-				ConvertToX3DOM(object[key], key, element, path);
+				ConvertToX3DOM(object[key], key, element, path, parentkey.substr(1));
 			}
 		}
 	}
-	containerFields.shift();
 }
 
-function CreateElement(key, x3djsonNS) {
+function CreateElement(key, x3djsonNS, containerField) {
 	var child = null;
 	if (typeof x3djsonNS === 'undefined') {
 		child = document.createElement(key);
@@ -215,31 +207,38 @@ function CreateElement(key, x3djsonNS) {
 			child = document.createElement(key);
 		}
 	}
-	if (containerFields.length > 1 && containerFields[0] !== 'children' && containerFields[0] !== 'shaders') {
-		child.setAttribute('containerField', containerFields[0]);
+	if (typeof containerField !== 'undefined') {
+		child.setAttribute('containerField', containerField);
 	}
 	return child;
 }
 
 function CDATACreateFunction(document, element, str) {
 	// for script nodes
+	/*
 	var open = document.createTextNode('<![CDATA[');
 	var child = document.createTextNode(str.replace(/\&lt;/g, '<').replace(/\&gt;/g, '>').replace(/\&amp;/g, '&'));
 	var close = document.createTextNode(']]>');
 	element.appendChild(open);
 	element.appendChild(child);
 	element.appendChild(close);
+	*/
 	/*
 	var child = document.createCDATASection(str);
 	element.appendChild(child);
 	*/
+	var domParser = new DOMParser();
+	var cdataStr = '<script> <![CDATA[ ' + str + ' ]]> </script>'; // has to be wrapped into an element
+	var scriptDoc = domParser .parseFromString (cdataStr, 'application/xml');
+	var cdata = scriptDoc .children[0] .childNodes[1]; // space after script is childNode[0]
+	element .appendChild(cdata);
 }
 
 function setCDATACreateFunction(fnc) {
 	CDATACreateFunction = fnc;
 }
 
-function ConvertObject(key, object, element, path) {
+function ConvertObject(key, object, element, path, containerField) {
 	if (object !== null && typeof object[key] === 'object') {
 		if (key.substr(0,1) === '@') {
 			ConvertToX3DOM(object[key], key, element, path);
@@ -250,6 +249,7 @@ function ConvertObject(key, object, element, path) {
 				var child = document.createComment(CommentStringToXML(object[key][c]));
 				element.appendChild(child);
 			}
+		/*
 		} else if (key === 'Inline') {
 			var localArray = object[key]["@url"];
 			// console.error("Loading", localArray, "into", key);
@@ -263,13 +263,14 @@ function ConvertObject(key, object, element, path) {
 					element.appendChild(document.createTextNode("\n"));
 				} catch(e) {
 					// if JSON parse failed, it might be XML or WRL
-					var child = CreateElement(key, x3djsonNS);
+					var child = CreateElement(key, x3djsonNS, containerField);
 					// console.error("Reloading", object[key]["@url"].join('","').replace(/\.json/g, '.x3d').split(/","/));
 					ConvertToX3DOM(object[key], key, child, path);
 					element.appendChild(child);
 					element.appendChild(document.createTextNode("\n"));
 				}
 			});
+		*/
 		} else if (key === '#sourceText') {
 			CDATACreateFunction(document, element, object[key].join("\r\n")+"\r\n");
 		} else {
@@ -284,14 +285,14 @@ function ConvertObject(key, object, element, path) {
 						}
 					}
 					if (typeof object[key][childkey] === 'object') {
-						var child = CreateElement(key, x3djsonNS);
+						var child = CreateElement(key, x3djsonNS, containerField);
 						ConvertToX3DOM(object[key][childkey], childkey, child, path);
 						element.appendChild(child);
 						element.appendChild(document.createTextNode("\n"));
 					}
 				}
 			} else {
-				var child = CreateElement(key, x3djsonNS);
+				var child = CreateElement(key, x3djsonNS, containerField);
 				ConvertToX3DOM(object[key], key, child, path);
 				element.appendChild(child);
 				element.appendChild(document.createTextNode("\n"));
@@ -318,7 +319,7 @@ function JSONStringToXML(str) {
 	return str;
 }
 
-function ConvertToX3DOM(object, parentkey, element, path) {
+function ConvertToX3DOM(object, parentkey, element, path, containerField) {
 	var key;
 	var localArray = [];
 	var isArray = false;
@@ -423,6 +424,17 @@ function fixXML(xmlstr) {
 	return xmlstr;
 }
 
+function serializeDOM(json, element) {
+	var version = json.X3D["@version"];
+	var xml = '<?xml version="1.0" encoding="'+json.X3D["encoding"]+'"?>\n';
+	xml += '<!DOCTYPE X3D PUBLIC "ISO//Web3D//DTD X3D '+version+'//EN" "http://www.web3d.org/specifications/x3d-'+version+'.dtd">\n';
+
+	xml += new XMLSerializer().serializeToString(element);
+
+	xml = fixXML(xml);
+	return xml;
+}
+
 
 /*
  * Load X3D JSON into an element
@@ -433,19 +445,11 @@ function fixXML(xmlstr) {
  * returns an element - the element to append or insert into the DOM
  */
 function loadX3DJS(json, path, xml, NS) {
-	var version = json.X3D["@version"];
 	x3djsonNS = NS;
 	var child = CreateElement('X3D', NS);
 	ConvertToX3DOM(json, "", child, path);
 	if (typeof xml !== 'undefined' && typeof xml.push === 'function') {
-		xml.push('<?xml version="1.0" encoding="'+getEncoding()+'"?>');
-		xml.push('<!DOCTYPE X3D PUBLIC "ISO//Web3D//DTD X3D '+version+'//EN" "http://www.web3d.org/specifications/x3d-'+version+'.dtd">');
-
-		var serializer = new XMLSerializer();
-		var xmlstr = serializer.serializeToString(child);
-
-		xmlstr = fixXML(xmlstr);
-		xml.push(xmlstr);
+		xml.push(serializeDOM(json, child));
 	}
 	return child;
 }
@@ -455,8 +459,6 @@ if (typeof module === 'object')  {
 		loadX3DJS : loadX3DJS,
 		Browser : Browser,
 		ConvertToX3DOM : ConvertToX3DOM,
-		fixXML : fixXML,
-		getEncoding : getEncoding,
 		setCDATACreateFunction : setCDATACreateFunction,
 		loadURLs : loadURLs,
 		setDocument : function(doc) {
