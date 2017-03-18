@@ -9,6 +9,9 @@
     <script type="text/javascript" src="http://cdn.socket.io/socket.io-1.3.7.js"></script>
     <script type="text/javascript" src="X3DJSONLD.js"></script>
     <script type="text/javascript" src="PrototypeExpander.js"></script>
+    <script type="text/javascript" src="Flattener.js"></script>
+    <script type="text/javascript" src="Script.js"></script>
+    <script type="text/javascript" src="loaderJQuery.js"></script>
     <style type="text/css">
     X3D {
         background:#000;
@@ -15720,7 +15723,8 @@ Crypto Results:
 		$("#x3domjson").empty();
 		if (err === 'ok') {
 			var json = JSON.parse(message);
-			prototypeExpander(json, "");
+			json = prototypeExpander(url, json, "");
+			json = flattener(json);
 			$("#x3domjson").append(loadX3DJS(json, url));
 			x3dom.reload();
 		} else {

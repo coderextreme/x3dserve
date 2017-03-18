@@ -8,9 +8,10 @@ You need a recent version of node.js (5.6)
 You need a recent version of Java Developer's Kit (1.8)
 You need GnuPG
 
+first set JAVA_HOME
 ```
 npm install
 node app.js
 ```
 
-go to http://localhost:3000
+go to http://localhost:3002
