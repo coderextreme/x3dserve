@@ -24,14 +24,9 @@ function setVersion(version) {
 			$('#x3domxml').get()[0].innerHTML = $('textarea#xml').val().replace(/&lt;/g, "<").replace(/&gt;/g, ">");
 		}
 		var content = $('textarea#xml').val().replace(/&lt;/g, "<").replace(/&gt;/g, ">");
-		var cobwebWindow = document.getElementById("cobwebframe").contentWindow ;
-		var cobwebEle = cobwebWindow.document.getElementsByTagName("X3D")[0];
-		if (typeof cobwebWindow.X3D !== 'undefined') {
-			var browser = cobwebWindow.X3D.getBrowser(cobwebEle);
-			browser.replaceWorld(browser.createX3DFromString(content));
-		} else {
-			console.error("Cobweb disabled temporarily.  May work on next load");
-		}
+
+		loadCobwebXML(content);
+
 	        x3dom.reload();
         }
 
@@ -102,7 +97,31 @@ function setVersion(version) {
 	    }
 	}
 
-        function loadX3DOM(selector, json, url) {
+	function loadCobwebXML(content) {
+	/*
+		var cobwebEle = document.getElementsByTagName("X3DCanvas")[0];
+		if (typeof X3D !== 'undefined') {
+			var browser = X3D.getBrowser(cobwebEle);
+			browser.replaceWorld(browser.createX3DFromString(content));
+		} else {
+			console.error("Cobweb disabled temporarily.  May work on next load");
+		}
+	*/
+		X3D(function(el) {
+			var browser = X3D.getBrowser(el[0]);
+			browser.replaceWorld(browser.createX3DFromString(content));
+		});
+	}
+
+	function loadCobwebDOM(element) {
+		X3D(function(el) {
+			var browser = X3D.getBrowser(el[1]);
+			var importedScene = browser.importDocument(element);
+			browser.replaceWorld(importedScene);
+		});
+	}
+
+        function loadX3D(selector, json, url) {
 	    $(selector).empty();
 	    var xml = new LOG();
 	    if ($('#prototype').is(':checked')) {
@@ -114,13 +133,16 @@ function setVersion(version) {
 	        $('textarea#json').val(JSON.stringify(json, null, 2));
 	    }
 	    var NS = $('#namespace option:selected').text();
+	    var child;
 	    if (NS === "none") {
-		replaceX3DJSON(selector, json, url, xml); // X3DOM
+		child = replaceX3DJSON(selector, json, url, xml); // X3DOM
 	    } else {
-		replaceX3DJSON(selector, json, url, xml, NS);  // Cobweb if not XHTML NS
+		child = replaceX3DJSON(selector, json, url, xml, NS);  // Cobweb if not XHTML NS
 	    }
 	    updateXML(xml);
 	    loadScripts(json);
+	    var python = PythonSerializer.serializeToString(json, child);
+	    $('textarea#python').val(python);
         }
 
 	function appendInline(element, url) {
@@ -140,14 +162,17 @@ function setVersion(version) {
          *
 	 * selector (string) -- css selector
          * json (json object) -- json to convert to DOM
+	 * url -- name of path/filename json loaded from
          * xml (array or LOG, must have push function which takes a string) -- xml output (optional)
          * NS -- XML namespace (optional)
+	 * returns element loaded
          */
 	function appendX3DJSON2Selector(selector, json, url, xml, NS) {
 		var element = loadX3DJS(json, url, xml, NS);  // Cobweb if not XHTML NS
 		elementSetAttribute(element, "xmlns:xsd", 'http://www.w3.org/2001/XMLSchema-instance');
 		document.querySelector(selector).appendChild(element);
 		x3dom.reload();
+		return element;
 	}
 
         /*
@@ -157,8 +182,10 @@ function setVersion(version) {
          *
 	 * selector (string) -- css selector
          * json (json object) -- json to convert to DOM
+	 * url -- name of path/filename json loaded from
          * xml (array or LOG, must have push function which takes a string) -- xml output (optional)
          * NS -- XML namespace (optional)
+	 * returns element loaded
          */
 	function replaceX3DJSON(selector, json, url, xml, NS) {
 		// check against schema
@@ -171,11 +198,13 @@ function setVersion(version) {
 			elementSetAttribute(element, "xmlns:xsd", 'http://www.w3.org/2001/XMLSchema-instance');
 			$(selector).empty();
 			$(selector).append(element);
+			loadCobwebDOM(element);
+			return element;
 		}
 	}
 
 	function updateX3DOM() {
-		loadX3DOM("#x3domjson", JSON.parse($('textarea#json').val()), "flipper.json"); // does not load flipper.json
+		loadX3D("#x3domjson", JSON.parse($('textarea#json').val()), "flipper.json"); // does not load flipper.json
 	}
 
 	function loadX3DJSON(selector, url) {
@@ -211,7 +240,7 @@ function setVersion(version) {
 		}
 		$.getJSON(url, function(json) {
 			$('textarea#json').val(JSON.stringify(json, null, 2));
-			loadX3DOM(selector, JSON.parse($('textarea#json').val()), url);
+			loadX3D(selector, JSON.parse($('textarea#json').val()), url);
 		})
 		.fail(function(jqXHR, textStatus, errorThrown) { alert('getJSON request failed! ' + textStatus + ' ' + errorThrown); });
 	}
