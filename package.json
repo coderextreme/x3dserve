@@ -4,9 +4,9 @@
   "private": true,
   "dependencies": {
     "express": "*",
+    "xmldom": "*",
     "glob": "*",
     "gpg": "*",
-    "java": "*",
     "socket.io": "*"
   },
   "scripts": {

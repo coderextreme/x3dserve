@@ -125,11 +125,6 @@ function setVersion(version) {
 	    $(selector).empty();
 	    var xml = new LOG();
 	    if ($('#prototype').is(':checked')) {
-		// Expand Protos
-		// json = externPrototypeExpander(url, json);
-		json = prototypeExpander(url, json, "");
-		json = flattener(json);
-		// console.log("JSON IS NOW", json);
 	        $('textarea#json').val(JSON.stringify(json, null, 2));
 	    }
 	    var NS = $('#namespace option:selected').text();

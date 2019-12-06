@@ -6,7 +6,6 @@ var port = process.env.PORT || 3000;
 var fs = require('fs');
 var config = require("./config");
 var path = require('path');
-var runsaxon = require('./allsaxon');
 var glob = require( 'glob' );  
 var gpg = require( 'gpg' );  
 
@@ -16,6 +15,7 @@ var PE = require('./PrototypeExpander')
 PE.setLoadURLs(loadURLs);
 var prototypeExpander = PE.prototypeExpander;
 var externPrototypeExpander = PE.externPrototypeExpander;
+var convertXML = require('./convertXML.js');
 
 app.use(express.static(__dirname));
 
@@ -31,23 +31,27 @@ path.resolve(__dirname + "/examples"),
 );
 
 function runAndSend(socket, infile) {
-	runsaxon([infile]);
-	var outfile = infile.substr(0, infile.lastIndexOf("."))+".json";
-	var content = fs.readFileSync(outfile);
-	var json = JSON.parse(content.toString());
-	json = externPrototypeExpander(outfile, json);
+	console.log(infile);
+	var outstr = convertXML([infile], [
+		{ 
+		serializer : './DOM2JSONSerializer.js'
+		}
+		]);
+
+	
+	var json = JSON.parse(outstr[0]);
 	console.log('sending back', json);
 	try {
-		socket.emit('json', 'ok', JSON.stringify(json), outfile);
+		socket.emit('json', 'ok', JSON.stringify(json));
 	} catch (e) {
 		console.log(e);
-		socket.emit('json', e, JSON.stringify(json), outfile);
+		socket.emit('json', e, JSON.stringify(json));
 	}
-	return outfile;
 }
 
 var count = 0;
 io.on('connection', function(socket){
+	console.log("got a socket io connection");
 	socket.on('disconnect', function() {
 	});
 	socket.on('error', function(e) {
@@ -74,8 +78,7 @@ io.on('connection', function(socket){
 		console.log('receiving', infile);
 		if (infile.match(/^[^<>&{} "'\[\]\$\\;]+\.x3d$/)) {
 			try {
-				var outfile = runAndSend(socket, infile);
-				fs.unlink(outfile);
+				runAndSend(socket, infile);
 			} catch (e) {
 				console.log(e);
 			}
