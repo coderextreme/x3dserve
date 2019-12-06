@@ -11,10 +11,6 @@ var gpg = require( 'gpg' );
 
 var X3DJSONLD = require('./X3DJSONLD.js');
 var loadURLs = X3DJSONLD.loadURLs;
-var PE = require('./PrototypeExpander')
-PE.setLoadURLs(loadURLs);
-var prototypeExpander = PE.prototypeExpander;
-var externPrototypeExpander = PE.externPrototypeExpander;
 var convertXML = require('./convertXML.js');
 
 app.use(express.static(__dirname));
