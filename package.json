@@ -4,10 +4,10 @@
   "private": true,
   "dependencies": {
     "express": "*",
-    "xmldom": "*",
     "glob": "*",
     "gpg": "*",
-    "socket.io": "*"
+    "socket.io": "*",
+    "xmldom": "*"
   },
   "scripts": {
     "start": "node app.js",
