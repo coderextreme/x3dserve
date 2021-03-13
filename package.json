@@ -10,8 +10,7 @@
     "xmldom": "*"
   },
   "scripts": {
-    "start": "node app.js",
-    "postinstall": "javac -cp saxon9B.jar RunSaxon.java"
+    "start": "node app.js"
   },
   "engines": {
     "java": "8"
