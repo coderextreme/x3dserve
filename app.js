@@ -6,7 +6,13 @@ var port = process.env.PORT || 3000;
 var fs = require('fs');
 var config = require("./config");
 var path = require('path');
-var glob = require( 'glob' );  
+const {
+  glob,
+  globSync,
+  globStream,
+  globStreamSync,
+  Glob,
+} = require('glob')
 var gpg = require( 'gpg' );  
 
 var X3DJSONLD = require('./X3DJSONLD.js');
@@ -54,20 +60,22 @@ io.on('connection', function(socket){
 		console.log("socket error", e);
 	});
 	socket.on("search", function(string) {
-		console.log("searching", string);
-		glob(config.examples+'**/*.x3d', function( err, files ) {
-			 if (err) return;
-			 files.forEach(function(file) {
-				console.log("searching", string, "in", file);
-				file = "examples/"+file.substr(config.examples.length);
-				fs.readFile(file, 'utf-8', function(err, contents) {
-		    		    if (err) return;
-				    if (contents.indexOf(string) != -1) {
-					console.log("found", string, "in", file);
-					socket.emit('result', file);
-				    }
-				});
-			 });
+		console.log("searching in", config.examples, "for", string);
+		let files = globSync(config.examples+'**/*.x3d');
+		console.log("Found", files.length, "files.");
+		files.forEach(function(file) {
+			console.log("searching", string, "in", file);
+			// file = "examples/"+file.substr(config.examples.length);
+			fs.readFile(file, 'utf-8', function(err, contents) {
+			    if (err) {
+				    console.error(err);
+				    return;
+			    }
+			    if (contents.indexOf(string) != -1) {
+				console.log("found", string, "in", file);
+				socket.emit('result', file);
+			    }
+			});
 		});
 	});
 	socket.on("x3d", function(infile) {
