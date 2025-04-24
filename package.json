@@ -1,13 +1,13 @@
 {
   "name": "x3dserve",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": true,
   "dependencies": {
     "express": "*",
     "glob": "*",
     "gpg": "*",
     "socket.io": "*",
-    "@xmldom/xmldom": ">=0.7.5"
+    "@xmldom/xmldom": "*"
   },
   "scripts": {
     "start": "node app.js"

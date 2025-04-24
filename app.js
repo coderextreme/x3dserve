@@ -108,6 +108,7 @@ io.on('error', function(e) {
 	console.log("server error", e);
 });
 
+console.log("Listening on http://localhost:"+port+"/");
 http.listen(port);
 
 http.on('error', function (e) {
