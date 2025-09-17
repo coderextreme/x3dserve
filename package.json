@@ -2,12 +2,17 @@
   "name": "x3dserve",
   "version": "0.0.2",
   "private": true,
+  "type": "module",
   "dependencies": {
+    "ajv": "*",
+    "ajv-formats": "*",
+    "ajv-formats-draft2019": "*",
     "express": "*",
-    "glob": "*",
     "gpg": "*",
     "socket.io": "*",
-    "@xmldom/xmldom": "*"
+    "socket.io-client": "*",
+    "@xmldom/xmldom": "*",
+    "debug": "4.4.1"
   },
   "scripts": {
     "start": "node app.js"

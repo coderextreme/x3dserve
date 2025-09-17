@@ -1,10 +1,13 @@
 "use strict";
 
-var fs = require('fs');
-var mapToMethod = require('./mapToMethod.js');
-var mapToMethod2 = require('./mapToMethod2.js');
-var fieldTypes = require('./fieldTypes.js');
-var DOMParser = require('@xmldom/xmldom').DOMParser;
+if (typeof window === 'undefined') {
+  var fs = await import('fs');
+}
+import mapToMethod from './mapToMethod.js';
+import mapToMethod2 from './mapToMethod2.js';
+import fieldTypes from './fieldTypes.js';
+import { DOMParser } from'@xmldom/xmldom';
+import DOM2JSONSerializer from './DOM2JSONSerializer.js';
 
 if (typeof mapToMethod2 !== 'undefined') {
 	for (var map in mapToMethod2) {
@@ -20,54 +23,83 @@ for (var par in mapToMethod2) {
 */
 
 function serializeXML(str, serializer, co, mapToMethod, fieldTypes) {
-	var doc = null;
-	try {  
-		var domParser = new DOMParser();
-		doc = domParser.parseFromString (str, 'application/xml');
-
-	} catch (e) {
-		throw e;
+	let domParser = new DOMParser();
+	if (!domParser) {
+		console.error("Failed to create DOMParser")
+		return "";
 	}
-	var element = doc.documentElement;
-	str = new serializer().serializeToString(str, element, co, mapToMethod, fieldTypes)
-	return str;
+	let doc = domParser.parseFromString (str, 'application/xml');
+	if (!doc) {
+		console.error("Failed to parse Xml", str)
+		return "";
+	}
+	let element = doc.documentElement;
+	if (!element) {
+		console.error("No document element", str)
+		return "";
+	}
+	if (!serializer) {
+		console.error("No serializer", str)
+		return "";
+	} else {
+		console.error("Serializer", serializer)
+	}
+	let actual_serializer = new serializer();
+	if (!actual_serializer) {
+		console.error("No actual_serializer", str)
+		return "";
+	}
+	let str2 = actual_serializer.serializeToString(str, element, co, mapToMethod, fieldTypes)
+	if (!str2) {
+		console.error("Nothing parsed", str2)
+		return "";
+	} else {
+		return str2;
+	}
 }
 
-function convertXML(files, options) {
+export default function convertXML(file, option) {
 
-	var outstr = [];
+	if (file.match(/node_modules|package.json|JSONSchema/)) {
+		return;
+	}
+	var basefile = file.substr(0, file.lastIndexOf("."));
+	var file = basefile+".x3d";
+	var str = null;
+	if (typeof fs === 'object') {
+		str = fs.readFileSync(file).toString();
+	}
+	if (str === null) {
+		throw("Read nothing, or possbile error");
+	}
+	basefile = basefile.replace(/^C:\//, "")
+	basefile = basefile.replace(/^\.\.\//, "")
+	basefile = basefile.replace(/[-. ]/g, "_")
+	basefile = basefile.replace(/^(.*[\\\/])([0-9].*|default|switch|for)$/, "$1_$2")
 
-	for (var f in files) {
-		var file = files[f];
-		if (file.match(/node_modules|package.json|JSONSchema/)) {
-			continue;
+	try {
+		var co = option.codeOutput+basefile;
+		try {
+			let actual_serializer = eval(option.serializer);
+			var str2 = serializeXML(str, actual_serializer, basefile, mapToMethod, fieldTypes);
+		} catch (e) {
+			console.error("================================================================================");
+			console.error("File:", file);
+			console.error("Error:", e);
 		}
-		var basefile = file.substr(0, file.lastIndexOf("."));
-		var file = basefile+".x3d";
-		var str = fs.readFileSync(file).toString();
-		if (typeof str === 'undefined') {
-			throw("Read nothing, or possbile error");
-		}
-		basefile = basefile.replace(/^C:\//, "")
-		basefile = basefile.replace(/^\.\.\//, "")
-		basefile = basefile.replace(/-|\.| /g, "_")
-		basefile = basefile.replace(/^(.*[\\\/])([0-9].*|default|switch|for)$/, "$1_$2")
-
-		for (var ser in options) {
-			var serializer = require(options[ser].serializer);
-			try {
-				str = serializeXML(str, serializer, basefile, mapToMethod, fieldTypes);
-				outstr.push(str);
-			} catch (e) {
-				console.error("================================================================================");
-				console.error("File:", file);
-				console.error("Error:", e);
+		if (str2) {
+			var outfile = option.folder+basefile+option.extension
+			console.log("Writing", outfile);
+			fs.mkdirSync(outfile.substr(0, outfile.lastIndexOf("/")), { recursive: true });
+			if (typeof fs === 'object') {
+				fs.writeFileSync(outfile, str2);
+				// console.log("Wrote", str2, "to", outfile);
+				return str2;
 			}
+		} else {
+			throw("Wrote nothing, serializer returned nothing");
 		}
+	} catch (e) {
+		console.error(e);
 	}
-	return outstr;
-}
-
-if (typeof module === 'object')  {
-	module.exports = convertXML
 }

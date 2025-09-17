@@ -1,30 +1,47 @@
 var mapToMethod2 = {
 	"Shape" : {
-		"ProtoInstance": "setGeometry"
+		"MetadataString" : "addMetadata",
+		"ProtoInstance" : "setGeometry"
+	},
+	"Transform" : {
+		"Shape" : "addChild"
 	},
 	"HAnimJoint" : {
-		"Transform" : "addChild"
+		"Transform" : "addChildren",
+		"Shape" : "addChild",
+		"HAnimSite" : "addChild",
+		"Viewpoint" : "addChild"
 	},
 	"Appearance" : {
-		"ProtoInstance" : "setMaterial"
+		"ProtoInstance" : "addShaders",
+		"ProgramShader" : "addShaders",
+		"ComposedShader" : "addShaders",
+		"Script" : "addChild"
 	},
 	"ComposedShader" : {
-		"field" : "addField",
+		"field" : "addField"
 	},
 	"Script" : {
 		"field" : "addField"
 	},
 	"MetadataSet" : {
-		"ProtoInstance" : "setMetadata"
+		"ProtoInstance" : "setMetadata",
+		"MetadataBoolean" : "addValue",
+		"MetadataDouble" : "addValue",
+		"MetadataFloat" : "addValue",
+		"MetadataInteger" : "addValue",
+		"MetadataSet" : "addValue",
+		"MetadataString" : "addValue"
 	},
 	"RigidBody" : {
 		"CollidableShape" : "addGeometry"
 	},
 	"HAnimHumanoid" : {
 		"IS" : "addSkin",
-		"HAnimSite": "addViewpoints",
-		"HAnimSegment": "addSegments",
-		"Group" : "addSkeleton"
+		"HAnimJoint" : "addJoints",
+		"HAnimSegment" : "addSegments",
+		"HAnimSite" : "addViewpoints",
+		"MetadataSet" : "addMetadata"
 	},
 	"X3DPickSensorNode" : {
 		"IS" : "addPickedGeometry"
@@ -35,11 +52,12 @@ var mapToMethod2 = {
 	"PointPickSensor" : {
 		"IS" : "addPickedGeometry"
 	},
+	"Collision" : {
+		"Transform" : "setProxy",
+		"Group" : "setProxy"
+	},
 	"PrimitivePickSensor" : {
 		"IS" : "addPickedGeometry"
-	},
-	"GeoLOD" : {
-		"IS" : "addRootNode"
 	},
 	"LinePickSensor" : {
 		"IS" : "addPickedGeometry"
@@ -48,19 +66,16 @@ var mapToMethod2 = {
 		"IS" : "addData"
 	},
 	"GeoLOD" : {
+		"IS" : "addRootNode",
 		"GeoOrigin" : "setGeoOrigin"
 	},
 	"Scene" : {
-		"Metadata" : "addMetadata",
+		"LayerSet" : "addLayerSet",
 		"MetadataString" : "addMetadata",
-		"LayerSet" : "addLayerSet"
+		"MetadataSet" : "addChildren"
 	},
-	"HAnimHumanoid" : {
-		"HAnimJoint" : "addJoints",
-		"HAnimSegment" : "addSegments"
+	"field" : {
+		"HAnimJoint" : "addChild"
 	}
 };
-
-if (typeof module === 'object')  {
-	module.exports = mapToMethod2;
-}
+export default mapToMethod2;

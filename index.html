@@ -3,57 +3,31 @@
 <head>
     <title>JSON Loader</title>
     <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
-    <link rel="stylesheet" type="text/css" href="http://www.x3dom.org/download/dev/x3dom.css"></link>
+    <link rel="stylesheet" type="text/css" href="http://www.x3dom.org/download/dev/x3dom.css"/>
     <script type="text/javascript" src="http://www.x3dom.org/download/dev/x3dom-full.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-    <script type="text/javascript" src="/socket.io/socket.io.js"></script>
-    <script type="text/javascript" src="X3DJSONLD.js"></script>
-    <script type="text/javascript" src="Script.js"></script>
-    <script type="text/javascript" src="loaderJQuery.js"></script>
-    <style type="text/css">
-    X3D {
-        background:#000;
-	width:960px;
-	height:540px;
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script type="importmap">
+    {
+      "imports": {
+        "@xmldom/xmldom": "https://esm.sh/@xmldom/xmldom@0.9.8/es2022/xmldom.mjs",
+	"ajv": "../node/ajvAll.js"
+      }
     }
-    table td, table td * {
-        vertical-align: top;
-    }
-    </style>
-</head>
-<body>
-Select an X3D file to load and convert to JSON
-<select>
-<option>force.x3d</option>
-<option>flipper.x3d</option>
-</select>
-<br>
-Search file names:
-<input type="text" onchange="filter(event)"></input>
-
-Search contents:
-<input type="text" onchange="filterContents(event)"></input>
-
-<textarea id="json" rows="15" cols="80"></textarea><br>
-<br>
-Sign: <input id="sign" type="checkbox" checked="true"></input>
-Encrypt: <input id="encrypt" type="checkbox" checked="true"></input>
-Passphrase: <input id="passphrase" type="password"></input>
-Recipient: <input id="recipient" type="text" value="yottzumm@gmail.com"></input>  <!-- by default, send to me -->
-<button onclick="crypto(); return false;">Crypto!</button>
-Crypto Results:
-<textarea id="cryptojson" rows="15" cols="80"></textarea><br>
-<br>
-<div id="x3domjson"></div>
-
-<script>
-	var socket = io();
-	function filterContents(event) {
+    </script>
+    <script type="module" type="text/javascript" src="X3DJSONLD.js"></script>
+    <script type="module" type="text/javascript" src="Script.js"></script>
+    <script type="module" type="text/javascript" src="loaderJQuery.js"></script>
+    <script type="module" type="text/javascript" src="loadValidate.js"></script>
+    <script type="module">
+        import { io } from 'https://cdn.socket.io/4.7.2/socket.io.esm.min.js';
+        const socket = io();
+	window.filterContents = function(event) {
 		$("option").remove();
 		console.log("searching", event.target.value);
 		socket.emit("search", event.target.value);
 	}
-	function filter(event) {
+	window.filter = function(event) {
 		$.map($("option"), function(option, i) {
 			var text = $(option).text();
 			if (text.indexOf(event.target.value) >= 0) {
@@ -99,7 +73,7 @@ Crypto Results:
 		$('textarea#cryptojson').val(message);
 	});
 
-function crypto() {
+	window.gpgcrypto = function() {
 		var args = [];
 		if ($('#sign').is(':checked')) {
 			args.push('--sign');
@@ -126,5 +100,41 @@ function crypto() {
 		}
 }
 </script>
+    <style type="text/css">
+    X3D {
+        background:#000;
+	width:960px;
+	height:540px;
+    }
+    table td, table td * {
+        vertical-align: top;
+    }
+    </style>
+</head>
+<body>
+Select an X3D file to load and convert to JSON
+<select>
+<option>force.x3d</option>
+<option>flipper.x3d</option>
+</select>
+<br>
+Search file names:
+<input type="text" onchange="window.filter(event)"></input>
+
+Search contents:
+<input type="text" onchange="window.filterContents(event)"></input>
+
+<textarea id="json" rows="15" cols="80"></textarea><br>
+<br>
+Sign: <input id="sign" type="checkbox" checked="true"></input>
+Encrypt: <input id="encrypt" type="checkbox" checked="true"></input>
+Passphrase: <input id="passphrase" type="password"></input>
+Recipient: <input id="recipient" type="text" value="yottzumm@gmail.com"></input>  <!-- by default, send to me -->
+<button onclick="window.gpgcrypto(); return false;">Crypto!</button><br/>
+Crypto Results:
+<textarea id="cryptojson" rows="15" cols="80"></textarea><br>
+<br>
+<div id="x3domjson"></div>
+
 </body>
 </html>

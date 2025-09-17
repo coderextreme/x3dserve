@@ -1,8 +1,6 @@
 "use strict";
 
-// var jsonlint = require("jsonlint");
-
-function DOM2JSONSerializer() {
+export default function DOM2JSONSerializer() {
 	var fieldTypeMapping = {};
 	var DEFMapping = {};
 	try {
@@ -21,7 +19,7 @@ DOM2JSONSerializer.prototype = {
 			obj['X3D'] = {};
 		}
 		obj['X3D']['encoding'] = 'UTF-8';
-		obj['X3D']['JSON schema'] = 'http://www.web3d.org/specifications/x3d-3.3-JSONSchema.json';
+		obj['X3D']['JSON schema'] = 'https://www.web3d.org/specifications/x3d-4.0-JSONSchema.json';
 		if (typeof obj['X3D']['head'] !== 'undefined') {
 			var date = new Date();
 			var month = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" ][date.getMonth()];
@@ -31,8 +29,8 @@ DOM2JSONSerializer.prototype = {
 			obj['X3D']['head']['meta'].push({ "@name":"translated", "@content":date.getDate()+" "+month+" "+date.getFullYear()});
  			obj['X3D']['head']['meta'].push({ "@name":"generator", "@content":"DOM2JSONSerializer.js, https://github.com/coderextreme/X3DJSONLD/blob/master/src/main/node/DOM2JSONSerializer.js" });
 			//  fake X3dToJson.xslt
-  			// obj['X3D']['head']['meta'].push({ "@name":"generator", "@content":"X3dToJson.xslt, http://www.web3d.org/x3d/stylesheets/X3dToJson.html" });
-			obj['X3D']['head']['meta'].push( { "@name":"reference", "@content":"X3D JSON encoding: http://www.web3d.org/wiki/index.php/X3D_JSON_Encoding" });
+  			// obj['X3D']['head']['meta'].push({ "@name":"generator", "@content":"X3dToJson.xslt, https://www.web3d.org/x3d/stylesheets/X3dToJson.html" });
+			obj['X3D']['head']['meta'].push( { "@name":"reference", "@content":"X3D JSON encoding: https://www.web3d.org/wiki/index.php/X3D_JSON_Encoding" });
 		}
 		delete obj['X3D']['@xmlns:xsd'];
 
@@ -40,7 +38,7 @@ DOM2JSONSerializer.prototype = {
 		try {
 			var st = JSON.stringify(obj, null, 2);
 		} catch (e) {
-			console.error(st, obj, clazz, e);
+			// console.error(st, obj, clazz, e);
 
 		}
 		return st;
@@ -73,8 +71,12 @@ DOM2JSONSerializer.prototype = {
 	},
 
 	descendSubArray: function (values, convert) {
-		for (var v in values) {
-			values[v] = convert(values[v]);
+		if (values[0] !== '' && values[0] !== null) {
+			for (var v in values) {
+				values[v] = convert(values[v]);
+			}
+		} else {
+			values = [];
 		}
 		return values;
 	},
@@ -98,7 +100,7 @@ DOM2JSONSerializer.prototype = {
 			function(x) { return x.
 				replace(/\t/g, '\t').
 				replace(/\\n/g, "\n");
-				replace(/.*/g, '"$1"');
+				// replace(/.*/g, '"$1"');
 			});
 		return st;
 	},
@@ -114,15 +116,18 @@ DOM2JSONSerializer.prototype = {
 				var attrs = element.attributes;
 				try {
 					parseInt(a);
-					if (attrs.hasOwnProperty(a) && attrs[a].nodeType == 2) {
+					if (attrs.hasOwnProperty(a) && attrs[a].nodeType === 2) {
 						var attr = attrs[a].nodeName;
 						var method = attr;
 						// look at object model
 						var attrType = "SFString";
 						try {
-							attrType = fieldTypes[element.nodeName][attr];
+							if (typeof element.nodeName !== 'undefined' && element.nodeName !== 'undefined') {
+								attrType = fieldTypes[element.nodeName][attr];
+							}
 						} catch (e) {
-							console.error("Missing", attr, "in fieldTypes.js element", element.nodeName, " = ", fieldTypes[element.nodeName], "setting to SFString");
+							// console.log(e);
+							console.error("Missing", attr, "in fieldTypes.js element", element.nodeName); // , " = ", fieldTypes[element.nodeName], "setting to SFString");
 						}
 
 						if (attrs[a].nodeValue === 'NULL' &&
@@ -179,7 +184,7 @@ DOM2JSONSerializer.prototype = {
 							attrType === "MFInt32"||
 							attrType === "MFImage"||
 							attrType === "SFImage") {
-							attrval = this.descendSubArray(attrs[a].nodeValue.split(/[ ,]+/), parseInt);
+							attrval = this.descendSubArray(attrs[a].nodeValue.trim().split(/[\n\r\t ,]+/), parseInt);
 						} else if (
 							attrType === "SFColor"||
 							attrType === "MFColor"||
@@ -209,10 +214,10 @@ DOM2JSONSerializer.prototype = {
 							attrType === "SFColorRGBA"||
 							attrType === "MFColorRGBA"||
 							attrType === "MFDouble") {
-							attrval = this.descendSubArray(attrs[a].nodeValue.split(/[ ,]+/), parseFloat);
+							attrval = this.descendSubArray(attrs[a].nodeValue.trim().split(/[\n\r\t ,]+/), parseFloat);
 						} else if (
 							attrType === "MFBool") {
-							attrval = this.descendSubArray(attrs[a].nodeValue.split(/[ ,]+/), this.parseBool);
+							attrval = this.descendSubArray(attrs[a].nodeValue.trim().split(/[\n\r\t ,]+/), this.parseBool);
 						} else {
 							attrval = attrs[a].nodeValue.replace(/\\?"/g, "\\\"");
 						}
@@ -237,7 +242,7 @@ DOM2JSONSerializer.prototype = {
 				var attrs = element.attributes;
 				try {
 					parseInt(a);
-					if (attrs.hasOwnProperty(a) && attrs[a].nodeType == 2) {
+					if (attrs.hasOwnProperty(a) && attrs[a].nodeType === 2) {
 						var attr = attrs[a].nodeName;
 						if (attr === at) {
 							value = attrs[a].nodeValue;
@@ -306,7 +311,7 @@ DOM2JSONSerializer.prototype = {
 		var subobject = {};
 		if (node.nodeType === 1) {
 			var attrName = this.descendAttribute(node, "containerField", element, mapToMethod);
-			subobject = this.subSerializeToString(node, fieldTypes, n, mapToMethod);
+			subobject = this.subSerializeToString(node, fieldTypes, n, n + 1, mapToMethod);
 			if (node.nodeName === "meta" ||
 				node.nodeName === "unit" ||
 				node.nodeName === "component" ||
@@ -331,7 +336,7 @@ DOM2JSONSerializer.prototype = {
 			} else {
 				fieldName = '-'+attrName;
 				var attrType;
-				if (typeof fieldTypes[element.nodeName] !== 'undefined') {
+				if (element && element.nodeName && fieldTypes[element.nodeName]) {
 					attrType = fieldTypes[element.nodeName][attrName];
 				}
 				// console.error(element.nodeName, fieldName, node.nodeName, attrType);
@@ -347,7 +352,7 @@ DOM2JSONSerializer.prototype = {
 						fields[fieldName].push(subobject);
 					}
 				} else {
-					if (attrName === 'children' || attrName === 'shaders') {
+					if (attrName === 'children' || attrName === 'shaders' || attrName === 'skeleton') {
 						if (typeof fields[fieldName] === 'undefined') {
 							fields[fieldName] = []
 						}
@@ -375,7 +380,7 @@ DOM2JSONSerializer.prototype = {
 				fields[fieldName].push({"#comment": subobject[line]});
 			}
 		} else if (node.nodeType === 4) {
-			fieldName = "#sourceText";
+			fieldName = "#sourceCode";
 			subobject = this.descendSourceText(node);
 			if (subobject[subobject.length-1] === "") {
 				subobject.pop();
@@ -387,7 +392,7 @@ DOM2JSONSerializer.prototype = {
 	subSerializeToString : function(element, fieldTypes, n, mapToMethod) {
 		var fields = this.descendFields(element, fieldTypes);
 		var object = {};
-		if (typeof element != 'undefined') {
+		if (element && element.childNodes) {
 			for (var cn in element.childNodes) {
 				if (element.childNodes.hasOwnProperty(cn)) {
 					var node = element.childNodes[cn];
@@ -402,8 +407,8 @@ DOM2JSONSerializer.prototype = {
 				element.nodeName === "field" ||
 				element.nodeName === "fieldValue" ||
 				element.nodeName === "connect" ||
-				element.nodeName == "Scene" ||
-				element.nodeName == "head") {
+				element.nodeName === "Scene" ||
+				element.nodeName === "head") {
 				object = fields;
 				// console.error(object);
 			} else {
@@ -412,9 +417,4 @@ DOM2JSONSerializer.prototype = {
 		}
     		return object;
 	}
-}
-
-
-if (typeof module === 'object')  {
-	module.exports = DOM2JSONSerializer;
 }

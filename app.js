@@ -1,28 +1,28 @@
-var express = require('express');
-var app = express();
-var http = require('http').Server(app);
-var io = require('socket.io')(http);
-var port = process.env.PORT || 3000;
-var fs = require('fs');
-var config = require("./config");
-var path = require('path');
-const {
-  glob,
-  globSync,
-  globStream,
-  globStreamSync,
-  Glob,
-} = require('glob')
-var gpg = require( 'gpg' );  
+import express from 'express';
+import { createServer } from 'node:http';
+import { Server as SocketIOServer } from 'socket.io';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-var X3DJSONLD = require('./X3DJSONLD.js');
+import fs from 'fs';
+import { globSync } from 'node:fs';
+import gpg from 'gpg';  
+import X3DJSONLD from './X3DJSONLD.js';
+import convertXML from './convertXML.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const app = express();
+const server = createServer(app);
+const io = new SocketIOServer(server);
+const PORT = process.env.PORT || 3000;
+
+
+let examples = "./";
 var loadURLs = X3DJSONLD.loadURLs;
-var convertXML = require('./convertXML.js');
-
-app.use(express.static(__dirname));
-
-require("fs").symlink(
-path.resolve(config.examples),
+fs.symlink(
+path.resolve(examples),
 path.resolve(__dirname + "/examples"),
 'junction',
  function (err) {
@@ -32,27 +32,14 @@ path.resolve(__dirname + "/examples"),
   }
 );
 
-function runAndSend(socket, infile) {
-	console.log(infile);
-	var outstr = convertXML([infile], [
-		{ 
-		serializer : './DOM2JSONSerializer.js'
-		}
-		]);
+app.use(express.static(__dirname));
 
-	
-	var json = JSON.parse(outstr[0]);
-	console.log('sending back', json);
-	try {
-		socket.emit('json', 'ok', JSON.stringify(json));
-	} catch (e) {
-		console.log(e);
-		socket.emit('json', e, JSON.stringify(json));
-	}
-}
+// Basic route to serve your HTML file
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
 
-var count = 0;
-io.on('connection', function(socket){
+io.on('connection', function(socket) {
 	console.log("got a socket io connection");
 	socket.on('disconnect', function() {
 	});
@@ -60,12 +47,12 @@ io.on('connection', function(socket){
 		console.log("socket error", e);
 	});
 	socket.on("search", function(string) {
-		console.log("searching in", config.examples, "for", string);
-		let files = globSync(config.examples+'**/*.x3d');
+		console.log("searching in", examples, "for", string);
+		let files = globSync(examples+'**/*.x3d');
 		console.log("Found", files.length, "files.");
 		files.forEach(function(file) {
 			console.log("searching", string, "in", file);
-			// file = "examples/"+file.substr(config.examples.length);
+			// file = "examples/"+file.substr(examples.length);
 			fs.readFile(file, 'utf-8', function(err, contents) {
 			    if (err) {
 				    console.error(err);
@@ -116,11 +103,31 @@ io.on('error', function(e) {
 	console.log("server error", e);
 });
 
-console.log("Listening on http://localhost:"+port+"/");
-http.listen(port);
+function runAndSend(socket, infile) {
+	console.log(infile);
+	// convert a single file with a single serializer
+	var outstr = convertXML(infile,
+		{ 
+		serializer : 'DOM2JSONSerializer',
+		folder : "./",
+        	extension : ".x3dj",
+		});
 
-http.on('error', function (e) {
-  if (e.code == 'EADDRINUSE') {
-    console.log('Address in use, exiting...');
-  }
+	
+	if (outstr) {
+		var json = JSON.parse(outstr);
+		console.log('sending back', json);
+		try {
+			socket.emit('json', 'ok', JSON.stringify(json));
+		} catch (e) {
+			console.log(e);
+			socket.emit('json', e, JSON.stringify(json));
+		}
+	} else {
+		console.log(outstr);
+	}
+}
+
+server.listen(PORT, () => {
+  console.log(`Server running on port http://localhost:${PORT}/`);
 });
