@@ -19,7 +19,8 @@ const io = new SocketIOServer(server);
 const PORT = process.env.PORT || 3000;
 
 
-let examples = "./";
+let examples = "C:/Users/jcarl/X3DJSONLD/src/main/data/";
+
 var loadURLs = X3DJSONLD.loadURLs;
 fs.symlink(
 path.resolve(examples),
@@ -47,8 +48,8 @@ io.on('connection', function(socket) {
 		console.log("socket error", e);
 	});
 	socket.on("search", function(string) {
-		console.log("searching in", examples, "for", string);
-		let files = globSync(examples+'**/*.x3d');
+		console.log("searching in", "examples/", "for", string);
+		let files = globSync("examples/"+'**/*.x3d');
 		console.log("Found", files.length, "files.");
 		files.forEach(function(file) {
 			console.log("searching", string, "in", file);
@@ -66,6 +67,7 @@ io.on('connection', function(socket) {
 		});
 	});
 	socket.on("x3d", function(infile) {
+		infile = infile.replace(/\\/g, "/");
 		console.log('receiving', infile);
 		if (infile.match(/^[^<>&{} "'\[\]\$\\;]+\.x3d$/)) {
 			try {
@@ -73,6 +75,8 @@ io.on('connection', function(socket) {
 			} catch (e) {
 				console.log(e);
 			}
+		} else {
+			console.log('does not match', infile);
 		}
 	});
 	socket.on("gpg", function(input, args) {

@@ -1,5 +1,7 @@
-import Ajv2020 from "ajv/dist/2020";
-import addFormats from "ajv-formats-draft2019";
+// import Ajv2020 from "./ajv/dist/2020.js";
+import Ajv2020 from 'https://esm.sh/ajv/dist/2020';
+import addFormats from 'https://esm.sh/ajv-formats-draft2019';
+// import addFormats from "ajv-formats-draft2019";
 import X3DJSONLD from './X3DJSONLD.js';
 import schemajson from './x3d-4.0-JSONSchema.json' with { type: 'json' };
 
@@ -8,7 +10,7 @@ if (typeof window !== 'undefined') {
 	window.addFormats = addFormats;
 }
 
-var ajv = new Ajv2020({ strict: false });
+var ajv = new Ajv2020({ strict: false, code: {esm: true}});
 addFormats(ajv, {mode: "full", formats: ["uri-reference", "uri", "iri-reference", "iri"], keywords: true});  // fast mode is "fast"
 // var schemajson = await loadSchemaJson("4.0");
 let validated_version = addSchema(ajv, schemajson, "4.0");
