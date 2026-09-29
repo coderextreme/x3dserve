@@ -4,14 +4,15 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "ajv": "*",
-    "ajv-formats": "*",
-    "ajv-formats-draft2019": "*",
-    "express": "*",
-    "gpg": "*",
-    "socket.io": "*",
-    "socket.io-client": "*",
-    "@xmldom/xmldom": "*",
+    "@xmldom/xmldom": "0.9.12",
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
+    "ajv-formats-draft2019": "1.6.1",
+    "ajv-i18n": "4.2.0",
+    "express": "5.2.1",
+    "socket.io": "4.8.3",
+    "socket.io-client": "4.8.3",
+    "gpg": "0.6.0",
     "debug": "4.4.3"
   },
   "scripts": {
