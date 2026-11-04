@@ -268,6 +268,14 @@ ConvertChildren : function(xmlDoc, parentkey, object, element, path) {
 	}
 },
 
+jsonSetContainerField : function(object, containerField) {
+	if (
+	    containerField !== "texCoord" // &&
+	) {
+		object["@containerField"] = containerField;
+	}
+},
+
 /**
  * a method to create and element with tagnam key to DOM in a namespace.  If
  * containerField is set, then the containerField is set in the elemetn.
@@ -284,7 +292,27 @@ CreateElement : function(xmlDoc, key, x3djsonNS, containerField) {
 		}
 	}
 	if (typeof containerField !== 'undefined') { // && key.toLowerCase() !== containerField.toLowerCase()) {
-		if (containerField !== 'children' && containerField !== 'geometry' && containerField !== 'coord') {
+		if (containerField !== 'poses' &&
+		    containerField !== 'children' &&
+		    containerField !== 'geometry' &&
+		    containerField !== "appearance" &&
+		    containerField !== "fontStyle" &&
+		    containerField !== "metadata" &&
+		    containerField !== "normal" &&
+		    containerField !== "source" &&
+		    containerField !== "texture" &&
+		    containerField !== "value" &&
+		    containerField !== "color" &&
+		    containerField !== "emitter" &&
+		    containerField !== "fillProperties" &&
+		    containerField !== "geoOrigin" &&
+		    containerField !== "lineProperties" &&
+		    containerField !== "tangent" &&
+		    containerField !== "texCoord" &&
+		    containerField !== "textureProperties" &&
+		    containerField !== "textureTransform" &&
+		    containerField !== 'coord') {
+
 			X3DJSONLD.elementSetAttribute(child, 'containerField', containerField);
 		}
 	}
@@ -354,7 +382,11 @@ ConvertObject : function(xmlDoc, key, object, element, path, containerField) {
 			});
 			*/
 		} else if (key === '#sourceCode') {
-			X3DJSONLD.CDATACreateFunction(xmlDoc, element, object[key].join("\r\n")+"\r\n");
+			if (typeof process !== 'undefined' && process.platform === "win32") {
+				X3DJSONLD.CDATACreateFunction(xmlDoc, element, object[key].join("\r\n")+"\r\n");
+			} else {
+				X3DJSONLD.CDATACreateFunction(xmlDoc, element, object[key].join("\n")+"\n");
+			}
 		} else {
 			if (key === 'connect' || key === 'fieldValue' || key === 'field' || key === 'meta' || key === 'component' || key === 'unit') {
 				/*
@@ -497,19 +529,23 @@ ConvertToX3DOM : function(xmlDoc, object, parentkey, element, path, containerFie
 						// console.log(firstNode);
 						for (var skv in firstNode) {
 							for (var prop in firstNode[skv]) {
-								firstNode[skv][prop]['@containerField'] = key.substring(1);
+								this.jsonSetContainerField(firstNode[skv][prop], key.substring(1))
+
 								// console.log(firstNode[skv]);
 							}
 						}
 						X3DJSONLD.ConvertObject(xmlDoc, key, object, element, path, key.substring(1));
 					} else {
 						for (var skv in firstNode) {
-							firstNode[skv]['@containerField'] = key.substring(1);
+							this.jsonSetContainerField(firstNode[skv], key.substring(1))
 							X3DJSONLD.ConvertObject(xmlDoc, key, object, element, path, firstNode[skv]['@containerField']);
 						}
 					}
 				} else if (key.indexOf("HAnim") === 0 && key !== "HAnimHumanoid" && typeof object[key]['@USE'] != 'undefined') {
-					object[key]['@containerField'] = key.substring(5).toLowerCase()+"s";
+					this.jsonSetContainerField(object[key], key.substring(5).toLowerCase()+"s");
+					if (object[key]['@containerField'] === 'poses') {
+						this.jsonSetContainerField(object[key], "children"); // override poses
+					}
 					X3DJSONLD.ConvertObject(xmlDoc, key, object, element, path, object[key]['@containerField']);
 				} else {
 					X3DJSONLD.ConvertObject(xmlDoc, key, object, element, path);
@@ -656,7 +692,7 @@ fixXML : function(xmlstr) {
  * Serialize an element to XML and add an XML header.
  */
 serializeDOM : function(json, element, appendDocType) {
-	var version = "4.0";
+	var version = "4.1";
 	var encoding = "UTF-8";
 	if (typeof json !== 'undefined') {
 		version = json.X3D["@version"];
